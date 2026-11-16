@@ -31,7 +31,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    /** Bean Validation failures on @Valid request bodies. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new LinkedHashMap<>();
@@ -44,7 +43,6 @@ public class GlobalExceptionHandler {
                         "Validation failed", errors));
     }
 
-    /** Malformed JSON, or a wrongly formatted date/enum in the body or query string. */
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
     public ResponseEntity<ErrorResponse> handleBadInput(Exception ex) {
         return build(HttpStatus.BAD_REQUEST,

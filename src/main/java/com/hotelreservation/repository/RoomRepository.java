@@ -16,17 +16,12 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     boolean existsByRoomNumber(String roomNumber);
 
-    /**
-     * Loads a room with a pessimistic write lock. Two concurrent requests for the
-     * same room are serialized, so the overlap check + insert cannot race.
-     */
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT r FROM Room r WHERE r.id = :id")
     Optional<Room> findByIdForUpdate(@Param("id") Long id);
 
-    /**
-     * Active rooms that have NO confirmed reservation overlapping [checkIn, checkOut).
-     */
+
     @Query("""
             SELECT r FROM Room r
             WHERE r.active = true

@@ -35,7 +35,6 @@ public class RoomController {
         return roomService.getRoomById(id);
     }
 
-    // Example: GET /api/v1/rooms/available?checkIn=2026-12-20&checkOut=2026-12-25
     @GetMapping("/available")
     public List<RoomResponse> getAvailableRooms(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,

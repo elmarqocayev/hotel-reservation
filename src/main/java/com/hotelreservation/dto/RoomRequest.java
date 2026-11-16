@@ -18,6 +18,5 @@ public record RoomRequest(
         @DecimalMin(value = "0.01", message = "Price per night must be greater than 0")
         BigDecimal pricePerNight,
 
-        // Optional: defaults to true when omitted
         Boolean active
 ) {}

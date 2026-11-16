@@ -32,24 +32,15 @@ public class ReservationService {
     private final RoomRepository roomRepository;
     private final GuestRepository guestRepository;
 
-    /**
-     * Creates a reservation:
-     *  1. validates the date range
-     *  2. locks the room row and verifies the room exists and is active
-     *  3. rejects the request if the room is already booked in that period
-     *  4. finds (or creates) the guest
-     *  5. calculates the total price and saves the reservation as CONFIRMED
-     */
+
     @Transactional
     public ReservationResponse createReservation(ReservationRequest request) {
         LocalDate checkIn = request.checkInDate();
         LocalDate checkOut = request.checkOutDate();
 
-        // 1. Date validation (business rules that Bean Validation cannot express)
         validateDateRange(checkIn, checkOut);
 
-        // 2. The pessimistic lock makes concurrent bookings for the same room wait for
-        //    each other, so the overlap check below is safe from race conditions.
+
         Room room = roomRepository.findByIdForUpdate(request.roomId())
                 .orElseThrow(() -> new RoomNotFoundException(request.roomId()));
 
@@ -57,19 +48,16 @@ public class ReservationService {
             throw new RoomNotActiveException(room.getId());
         }
 
-        // 3. Overlap check. Only CONFIRMED reservations block a room; cancelled ones do not.
-        //    Ranges are treated as [checkIn, checkOut): a guest may check in on the same
-        //    day another guest checks out (same-day turnover is allowed).
+
         boolean overlaps = reservationRepository.existsOverlappingReservation(
                 room.getId(), ReservationStatus.CONFIRMED, checkIn, checkOut);
         if (overlaps) {
             throw new RoomAlreadyBookedException(room.getId(), checkIn, checkOut);
         }
 
-        // 4. Reuse an existing guest by email, otherwise register a new one
+
         Guest guest = findOrCreateGuest(request.guest());
 
-        // 5. Total price = number of nights * price per night
         BigDecimal totalPrice = calculateTotalPrice(room.getPricePerNight(), checkIn, checkOut);
 
         Reservation reservation = Reservation.builder()
@@ -89,7 +77,6 @@ public class ReservationService {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new ReservationNotFoundException(id));
 
-        // Cancelling an already cancelled reservation is harmless (idempotent)
         reservation.setStatus(ReservationStatus.CANCELLED);
         return ReservationResponse.from(reservation);
     }
@@ -106,9 +93,7 @@ public class ReservationService {
         return reservationRepository.findAll().stream().map(ReservationResponse::from).toList();
     }
 
-    // ----------------------------------------------------------------------------------
-    // Private helpers
-    // ----------------------------------------------------------------------------------
+
 
     private void validateDateRange(LocalDate checkIn, LocalDate checkOut) {
         if (!checkIn.isAfter(LocalDate.now())) {
@@ -119,7 +104,6 @@ public class ReservationService {
         }
     }
 
-    /** nights = checkOut - checkIn (in days); total = nights * pricePerNight */
     private BigDecimal calculateTotalPrice(BigDecimal pricePerNight, LocalDate checkIn, LocalDate checkOut) {
         long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
         return pricePerNight.multiply(BigDecimal.valueOf(nights));

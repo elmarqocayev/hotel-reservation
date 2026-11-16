@@ -10,10 +10,7 @@ import java.time.LocalDate;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
-    /**
-     * Two date ranges overlap when each one starts before the other ends:
-     *   existing.checkIn < requested.checkOut  AND  existing.checkOut > requested.checkIn
-     */
+
     @Query("""
             SELECT COUNT(r) > 0 FROM Reservation r
             WHERE r.room.id = :roomId
